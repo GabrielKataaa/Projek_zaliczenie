@@ -1,121 +1,384 @@
 import 'package:flutter/material.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'models/book.dart';
+import 'services/local_database.dart';
+import 'services/sync_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox("books");
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Książki',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A3728)),
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF4A3728),
+          foregroundColor: Colors.white,
+          elevation: 2,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const BookListScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class BookListScreen extends StatefulWidget {
+  const BookListScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<BookListScreen> createState() => _BookListScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _BookListScreenState extends State<BookListScreen> {
+  String _selectedFilter = "wszystkie";
+  late Future<List<Book>> _booksFuture;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _booksFuture = _loadBooks();
+  }
+
+  Future<List<Book>> _loadBooks() async {
+    try {
+      await BookSyncService.loadInitialDataIfNeeded();
+    } catch (e) {
+      if (BookLocalDatabase.isEmpty()) rethrow;
+    }
+    return BookLocalDatabase.getBooks();
+  }
+
+  void _reload() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _booksFuture = Future.value(BookLocalDatabase.getBooks());
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      appBar: AppBar(title: const Text("Książki")),
+      body: FutureBuilder<List<Book>>(
+        future: _booksFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text("Ładowanie książek..."),
+                ],
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Błąd: ${snapshot.error}",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            );
+          }
+
+          final allBooks = snapshot.data ?? [];
+
+          List<Book> filtered = allBooks;
+          if (_selectedFilter == "ulubione") {
+            filtered = allBooks.where((b) => b.isFavorite).toList();
+          } else if (_selectedFilter == "do przeczytania") {
+            filtered = allBooks.where((b) => b.isToRead).toList();
+          }
+
+          if (_searchQuery.isNotEmpty) {
+            final q = _searchQuery.toLowerCase();
+            filtered = filtered.where((b) {
+              return b.title.toLowerCase().contains(q) ||
+                  b.author.toLowerCase().contains(q);
+            }).toList();
+          }
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: "Szukaj po tytule lub autorze...",
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = "");
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                child: Row(
+                  children: [
+                    _FilterChip(
+                      label: "Wszystkie",
+                      count: allBooks.length,
+                      selected: _selectedFilter == "wszystkie",
+                      onTap: () =>
+                          setState(() => _selectedFilter = "wszystkie"),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: "Ulubione",
+                      count: allBooks.where((b) => b.isFavorite).length,
+                      selected: _selectedFilter == "ulubione",
+                      icon: Icons.favorite,
+                      onTap: () => setState(() => _selectedFilter = "ulubione"),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: "Do przeczytania",
+                      count: allBooks.where((b) => b.isToRead).length,
+                      selected: _selectedFilter == "do przeczytania",
+                      icon: Icons.bookmark,
+                      onTap: () =>
+                          setState(() => _selectedFilter = "do przeczytania"),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Znaleziono: ${filtered.length} książek",
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? _EmptyState(filter: _selectedFilter)
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final book = filtered[index];
+                          return BookCard(book: book, onTap: () {});
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final bool selected;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const color = Color(0xFF4A3728);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? color : Colors.grey[200],
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('You have pushed the button this many times:'),
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? Colors.white : Colors.grey[600],
+              ),
+              const SizedBox(width: 4),
+            ],
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              "$label ($count)",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : Colors.grey[700],
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+class BookCard extends StatelessWidget {
+  final Book book;
+  final VoidCallback onTap;
+
+  const BookCard({super.key, required this.book, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: book.coverUrl.isNotEmpty
+                    ? Image.network(
+                        book.coverUrl,
+                        width: 60,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _PlaceholderCover(),
+                      )
+                    : _PlaceholderCover(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      book.author,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Pobrania: ${book.downloadCount}",
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceholderCover extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 60,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.brown[100],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Icon(Icons.book, color: Colors.brown, size: 32),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String filter;
+
+  const _EmptyState({required this.filter});
+
+  @override
+  Widget build(BuildContext context) {
+    String msg;
+    IconData icon;
+    if (filter == "ulubione") {
+      msg = "Nie masz jeszcze ulubionych książek.";
+      icon = Icons.favorite_border;
+    } else if (filter == "do przeczytania") {
+      msg = "Lista do przeczytania jest pusta.";
+      icon = Icons.bookmark_border;
+    } else {
+      msg = "Brak książek.";
+      icon = Icons.menu_book;
+    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              msg,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 15),
+            ),
+          ],
+        ),
       ),
     );
   }
