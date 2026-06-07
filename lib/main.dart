@@ -3,6 +3,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'models/book.dart';
 import 'services/local_database.dart';
 import 'services/sync_service.dart';
+import 'services/book_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -197,7 +198,18 @@ class _BookListScreenState extends State<BookListScreen> {
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final book = filtered[index];
-                          return BookCard(book: book, onTap: () {});
+                          return BookCard(
+                            book: book,
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BookDetailScreen(book: book),
+                                ),
+                              );
+                              _reload();
+                            },
+                          );
                         },
                       ),
               ),
