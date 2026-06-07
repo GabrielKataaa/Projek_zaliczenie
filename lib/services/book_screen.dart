@@ -15,8 +15,6 @@ class BookDetailScreen extends StatefulWidget {
 class _BookDetailScreenState extends State<BookDetailScreen> {
   late Book _book;
 
-  bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
@@ -33,10 +31,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           isFavorite: local?.isFavorite ?? false,
           isToRead: local?.isToRead ?? false,
         );
-        _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() {});
     }
   }
 

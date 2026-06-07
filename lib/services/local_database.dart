@@ -17,10 +17,6 @@ class BookLocalDatabase {
     }
   }
 
-  static Future<void> addBook(Book book) async {
-    await _box.put(book.id, book.toMap());
-  }
-
   static Future<void> updateBook(Book book) async {
     await _box.put(book.id, book.toMap());
   }
