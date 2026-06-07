@@ -27,9 +27,11 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(updated.isFavorite
-              ? "Dodano do ulubionych"
-              : "Usunięto z ulubionych"),
+          content: Text(
+            updated.isFavorite
+                ? "Dodano do ulubionych"
+                : "Usunięto z ulubionych",
+          ),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -43,9 +45,11 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(updated.isToRead
-              ? "Dodano do listy do przeczytania"
-              : "Usunięto z listy do przeczytania"),
+          content: Text(
+            updated.isToRead
+                ? "Dodano do listy do przeczytania"
+                : "Usunięto z listy do przeczytania",
+          ),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -89,12 +93,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     borderRadius: BorderRadius.circular(10),
                     child: _book.coverUrl.isNotEmpty
                         ? Image.network(
-                      _book.coverUrl,
-                      width: 100,
-                      height: 135,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _placeholderCover(),
-                    )
+                            _book.coverUrl,
+                            width: 100,
+                            height: 135,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _placeholderCover(),
+                          )
                         : _placeholderCover(),
                   ),
                   const SizedBox(width: 20),
@@ -105,7 +109,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         Text(
                           _book.title,
                           style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -123,14 +129,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             children: [
                               if (_book.isFavorite)
                                 _Badge(
-                                    icon: Icons.favorite,
-                                    label: "Ulubiona",
-                                    color: Colors.red),
+                                  icon: Icons.favorite,
+                                  label: "Ulubiona",
+                                  color: Colors.red,
+                                ),
                               if (_book.isToRead)
                                 _Badge(
-                                    icon: Icons.bookmark,
-                                    label: "Do przeczytania",
-                                    color: Colors.blue),
+                                  icon: Icons.bookmark,
+                                  label: "Do przeczytania",
+                                  color: Colors.blue,
+                                ),
                             ],
                           ),
                       ],
@@ -146,27 +154,31 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 children: [
                   if (!_book.isCustom) ...[
                     _InfoRow(
-                        icon: Icons.download,
-                        label: "Liczba pobrań",
-                        value: _book.downloadCount.toString()),
+                      icon: Icons.download,
+                      label: "Liczba pobrań",
+                      value: _book.downloadCount.toString(),
+                    ),
                     const SizedBox(height: 12),
                   ],
                   if (_book.languages.isNotEmpty) ...[
                     _InfoRow(
-                        icon: Icons.language,
-                        label: "Język",
-                        value: _book.languages.join(", ").toUpperCase()),
+                      icon: Icons.language,
+                      label: "Język",
+                      value: _book.languages.join(", ").toUpperCase(),
+                    ),
                     const SizedBox(height: 12),
                   ],
                   if (_book.isCustom)
                     _InfoRow(
-                        icon: Icons.person,
-                        label: "Typ",
-                        value: "Własna książka"),
+                      icon: Icons.person,
+                      label: "Typ",
+                      value: "Własna książka",
+                    ),
                   const SizedBox(height: 20),
-                  const Text("Opis",
-                      style: TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Opis",
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     _book.description.isNotEmpty
@@ -181,16 +193,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         child: OutlinedButton.icon(
                           onPressed: _toggleFavorite,
                           icon: Icon(
-                              _book.isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: Colors.red),
-                          label: Text(_book.isFavorite
-                              ? "Usuń z ulubionych"
-                              : "Dodaj do ulubionych"),
+                            _book.isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: Colors.red,
+                          ),
+                          label: Text(
+                            _book.isFavorite
+                                ? "Usuń z ulubionych"
+                                : "Dodaj do ulubionych",
+                          ),
                           style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.red),
-                              foregroundColor: Colors.red),
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -198,16 +214,18 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         child: OutlinedButton.icon(
                           onPressed: _toggleToRead,
                           icon: Icon(
-                              _book.isToRead
-                                  ? Icons.bookmark
-                                  : Icons.bookmark_border,
-                              color: Colors.blue),
-                          label: Text(_book.isToRead
-                              ? "Usuń z listy"
-                              : "Do przeczytania"),
+                            _book.isToRead
+                                ? Icons.bookmark
+                                : Icons.bookmark_border,
+                            color: Colors.blue,
+                          ),
+                          label: Text(
+                            _book.isToRead ? "Usuń z listy" : "Do przeczytania",
+                          ),
                           style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.blue),
-                              foregroundColor: Colors.blue),
+                            side: const BorderSide(color: Colors.blue),
+                            foregroundColor: Colors.blue,
+                          ),
                         ),
                       ),
                     ],
@@ -226,7 +244,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       width: 100,
       height: 135,
       decoration: BoxDecoration(
-          color: Colors.brown[100], borderRadius: BorderRadius.circular(10)),
+        color: Colors.brown[100],
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: const Icon(Icons.book, color: Colors.brown, size: 48),
     );
   }
@@ -237,7 +257,11 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({required this.icon, required this.label, required this.value});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -273,9 +297,14 @@ class _Badge extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 12, color: color, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

@@ -5,7 +5,10 @@ import '../models/book.dart';
 class BookApiService {
   static const String baseUrl = "https://gutendex.com";
 
-  static Future<List<Book>> fetchBooks({int page = 1, String search = ""}) async {
+  static Future<List<Book>> fetchBooks({
+    int page = 1,
+    String search = "",
+  }) async {
     String url = "$baseUrl/books?page=$page";
     if (search.isNotEmpty) {
       url += "&search=${Uri.encodeComponent(search)}";

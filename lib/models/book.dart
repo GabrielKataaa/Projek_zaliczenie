@@ -85,11 +85,13 @@ class Book {
     final coverUrl = formats["image/jpeg"] as String? ?? "";
 
     final subjects = json["subjects"] as List? ?? [];
-    final description =
-    subjects.isNotEmpty ? subjects.take(3).join(", ") : "Brak opisu";
+    final description = subjects.isNotEmpty
+        ? subjects.take(3).join(", ")
+        : "Brak opisu";
 
-    final langs =
-    (json["languages"] as List? ?? []).map((l) => l.toString()).toList();
+    final langs = (json["languages"] as List? ?? [])
+        .map((l) => l.toString())
+        .toList();
 
     return Book(
       id: json["id"] ?? 0,

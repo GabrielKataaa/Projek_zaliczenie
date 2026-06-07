@@ -198,17 +198,42 @@ class _BookListScreenState extends State<BookListScreen> {
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final book = filtered[index];
-                          return BookCard(
-                            book: book,
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BookDetailScreen(book: book),
-                                ),
-                              );
+                          return Dismissible(
+                            key: ValueKey(book.id),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              color: Colors.red,
+                              child: const Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                              ),
+                            ),
+                            onDismissed: (_) async {
+                              await BookLocalDatabase.deleteBook(book.id);
                               _reload();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Usunięto: ${book.title}"),
+                                  ),
+                                );
+                              }
                             },
+                            child: BookCard(
+                              book: book,
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        BookDetailScreen(book: book),
+                                  ),
+                                );
+                                _reload();
+                              },
+                            ),
                           );
                         },
                       ),
