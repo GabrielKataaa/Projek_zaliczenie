@@ -32,6 +32,7 @@ class BookLocalDatabase {
     if (item == null) return null;
     return Book.fromMap(Map<String, dynamic>.from(item as Map));
   }
+
   static Future<void> deleteBook(int id) async {
     await _box.delete(id);
   }

@@ -26,4 +26,17 @@ class BookApiService {
       throw Exception("Błąd pobierania danych (HTTP ${response.statusCode})");
     }
   }
+
+  static Future<Book> fetchBookDetails(int id) async {
+    final response = await http.get(Uri.parse("$baseUrl/books/$id"));
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return Book.fromApi(json);
+    } else {
+      throw Exception(
+        "Błąd pobierania szczegółów (HTTP ${response.statusCode})",
+      );
+    }
+  }
 }

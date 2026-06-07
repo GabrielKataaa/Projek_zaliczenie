@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/local_database.dart';
+import '../services/api_service.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final Book book;
@@ -14,10 +15,29 @@ class BookDetailScreen extends StatefulWidget {
 class _BookDetailScreenState extends State<BookDetailScreen> {
   late Book _book;
 
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
-    _book = BookLocalDatabase.getBook(widget.book.id) ?? widget.book;
+    _book = widget.book;
+    _loadDetails();
+  }
+
+  Future<void> _loadDetails() async {
+    try {
+      final fetched = await BookApiService.fetchBookDetails(widget.book.id);
+      final local = BookLocalDatabase.getBook(widget.book.id);
+      setState(() {
+        _book = fetched.copyWith(
+          isFavorite: local?.isFavorite ?? false,
+          isToRead: local?.isToRead ?? false,
+        );
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _toggleFavorite() async {
@@ -152,14 +172,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!_book.isCustom) ...[
-                    _InfoRow(
-                      icon: Icons.download,
-                      label: "Liczba pobrań",
-                      value: _book.downloadCount.toString(),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                  _InfoRow(
+                    icon: Icons.download,
+                    label: "Liczba pobrań",
+                    value: _book.downloadCount.toString(),
+                  ),
+                  const SizedBox(height: 12),
                   if (_book.languages.isNotEmpty) ...[
                     _InfoRow(
                       icon: Icons.language,
@@ -168,12 +186,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (_book.isCustom)
-                    _InfoRow(
-                      icon: Icons.person,
-                      label: "Typ",
-                      value: "Własna książka",
-                    ),
                   const SizedBox(height: 20),
                   const Text(
                     "Opis",

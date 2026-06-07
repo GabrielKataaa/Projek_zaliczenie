@@ -8,7 +8,6 @@ class Book {
   final int downloadCount;
   final bool isFavorite;
   final bool isToRead;
-  final bool isCustom;
 
   Book({
     required this.id,
@@ -20,7 +19,6 @@ class Book {
     required this.downloadCount,
     this.isFavorite = false,
     this.isToRead = false,
-    this.isCustom = false,
   });
 
   Book copyWith({
@@ -40,7 +38,6 @@ class Book {
       downloadCount: downloadCount,
       isFavorite: isFavorite ?? this.isFavorite,
       isToRead: isToRead ?? this.isToRead,
-      isCustom: isCustom,
     );
   }
 
@@ -55,7 +52,6 @@ class Book {
       "downloadCount": downloadCount,
       "isFavorite": isFavorite,
       "isToRead": isToRead,
-      "isCustom": isCustom,
     };
   }
 
@@ -71,7 +67,6 @@ class Book {
       downloadCount: map["downloadCount"] ?? 0,
       isFavorite: map["isFavorite"] ?? false,
       isToRead: map["isToRead"] ?? false,
-      isCustom: map["isCustom"] ?? false,
     );
   }
 
